@@ -1,122 +1,79 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ms">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dashboard Kawasan Perindustrian Negeri Selangor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand-block">
-        <img src="assets/logo-suo.jpeg" alt="Logo Selangor Urban Observatory" class="logo" />
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand-box"><img src="assets/logo-suo.jpeg" alt="Logo SUO"></div>
+    <nav>
+      <a class="nav-item active" href="#utama"><span>⌂</span>Utama</a>
+      <a class="nav-item" href="#taburan"><span>▥</span>Taburan</a>
+      <a class="nav-item" href="#profil"><span>⌖</span>Profil Kawasan</a>
+      <a class="nav-item" href="#kategori"><span>▤</span>Kategori</a>
+      <a class="nav-item" href="#mip"><span>◉</span>MIP</a>
+      <a class="nav-item" href="#pbt"><span>▦</span>PBT</a>
+      <a class="nav-item" href="#analisis"><span>⌁</span>Analisis</a>
+      <a class="nav-item" href="#data"><span>⇩</span>Muat Turun Data</a>
+    </nav>
+    <div class="side-footer">SELANGOR<br>PINTAR<br>HARMONI<br>SEJAHTERA</div>
+  </aside>
+
+  <main class="main">
+    <header class="hero" id="utama">
+      <div class="hero-overlay"></div>
+      <div class="hero-copy">
+        <div class="eyebrow">DASHBOARD</div>
+        <h1>KAWASAN PERINDUSTRIAN</h1>
+        <div class="subtitle">N E G E R I &nbsp; S E L A N G O R</div>
+        <div class="tagline">Pemacu Pertumbuhan &nbsp; | &nbsp; Memacu Peluang &nbsp; | &nbsp; Membangun Selangor</div>
       </div>
-      <nav class="menu">
-        <button class="menu-item active" data-section="dashboard"><span>⌂</span>Utama</button>
-        <button class="menu-item" data-section="taburan"><span>▥</span>Taburan</button>
-        <button class="menu-item" data-section="profil"><span>◉</span>Profil Kawasan</button>
-        <button class="menu-item" data-section="kategori"><span>▦</span>Kategori</button>
-        <button class="menu-item" data-section="mip"><span>◆</span>MIP</button>
-        <button class="menu-item" data-section="pbt"><span>▧</span>PBT</button>
-        <button class="menu-item" data-section="analisis"><span>⌁</span>Analisis</button>
-      </nav>
-      <div class="sidebar-footer">SELANGOR<br>PINTAR<br>HARMONI<br>SEJAHTERA</div>
-    </aside>
+      <div class="hero-right">SELANGOR<br>MAJU BERSAMA<br>SEKTOR INDUSTRI</div>
+    </header>
 
-    <main class="main-content">
-      <header class="hero">
-        <div class="hero-overlay"></div>
-        <div class="hero-text">
-          <div class="eyebrow">DASHBOARD</div>
-          <h1>KAWASAN PERINDUSTRIAN</h1>
-          <div class="state">NEGERI SELANGOR</div>
-          <p>Pemacu Pertumbuhan &nbsp;|&nbsp; Memacu Peluang &nbsp;|&nbsp; Membangun Selangor</p>
-        </div>
-        <div class="hero-tagline">SELANGOR<br>MAJU BERSAMA<br>SEKTOR INDUSTRI</div>
-      </header>
+    <section class="filters">
+      <label>Daerah<select id="filterDaerah"><option value="">Semua</option></select></label>
+      <label>Pihak Berkuasa Tempatan (PBT)<select id="filterPBT"><option value="">Semua</option></select></label>
+      <label>Kategori Kawasan<select id="filterKategori"><option value="">Semua</option></select></label>
+      <label>Status MIP<select id="filterMIP"><option value="">Semua</option><option value="Yes">Ya</option><option value="No">Tidak</option><option value="__NULL__">Tiada Maklumat</option></select></label>
+      <button id="resetBtn">↻ Set Semula</button>
+    </section>
 
-      <section class="filters card">
-        <label>Daerah
-          <select id="filterDaerah"><option value="">Semua</option></select>
-        </label>
-        <label>Pihak Berkuasa Tempatan (PBT)
-          <select id="filterPBT"><option value="">Semua</option></select>
-        </label>
-        <label>Kategori Kawasan
-          <select id="filterKategori"><option value="">Semua</option></select>
-        </label>
-        <label>Status MIP
-          <select id="filterMIP"><option value="">Semua</option><option value="Yes">Ya</option><option value="No">Tidak</option></select>
-        </label>
-        <button id="resetBtn" class="reset-btn">↻ Set Semula</button>
-      </section>
+    <section class="kpis">
+      <div class="kpi red"><div class="kpi-icon">▥</div><div><span>JUMLAH KAWASAN PERINDUSTRIAN</span><strong id="kpiKawasan">177</strong><small>kawasan</small></div></div>
+      <div class="kpi gold"><div class="kpi-icon">▦</div><div><span>JUMLAH PBT</span><strong id="kpiPBT">12</strong><small>pihak berkuasa tempatan</small></div></div>
+      <div class="kpi crimson"><div class="kpi-icon">⚙</div><div><span>JUMLAH KATEGORI</span><strong id="kpiKategori">8</strong><small>kategori kawasan</small></div></div>
+      <div class="kpi amber"><div class="kpi-icon">●</div><div><span>MANAGED INDUSTRIAL PARK (MIP)</span><strong id="kpiMIP">6</strong><small>kawasan</small></div></div>
+    </section>
 
-      <section class="kpi-grid">
-        <article class="kpi red"><div class="kpi-icon">🏭</div><div><span>JUMLAH KAWASAN PERINDUSTRIAN</span><strong id="kpiTotal">177</strong><small>kawasan</small></div></article>
-        <article class="kpi amber"><div class="kpi-icon">🏢</div><div><span>JUMLAH PBT</span><strong id="kpiPbt">13</strong><small>pihak berkuasa tempatan</small></div></article>
-        <article class="kpi crimson"><div class="kpi-icon">⚙</div><div><span>JUMLAH KATEGORI</span><strong id="kpiKategori">8</strong><small>kategori kawasan</small></div></article>
-        <article class="kpi gold"><div class="kpi-icon">◆</div><div><span>MANAGED INDUSTRIAL PARK (MIP)</span><strong id="kpiMip">6</strong><small>kawasan</small></div></article>
-      </section>
+    <section class="dashboard-grid" id="taburan">
+      <article class="card chart-card"><h2>Taburan Kawasan Perindustrian Mengikut Daerah</h2><div class="canvas-wrap"><canvas id="districtChart"></canvas></div></article>
+      <article class="card chart-card" id="kategori"><h2>Kategori Kawasan Perindustrian</h2><div class="canvas-wrap donut"><canvas id="categoryChart"></canvas></div></article>
+      <article class="card map-card"><div class="card-title-row"><h2>Taburan Kawasan Perindustrian Negeri Selangor</h2><span id="mapCount">177 kawasan</span></div><div id="map"></div></article>
 
-      <section class="dashboard-grid">
-        <article class="card chart-card span-5">
-          <h2>Taburan Kawasan Perindustrian Mengikut Daerah</h2>
-          <div class="chart-wrap"><canvas id="districtChart"></canvas></div>
-        </article>
+      <article class="card chart-card"><h2>Keluasan Kawasan Perindustrian Mengikut Daerah</h2><div class="canvas-wrap"><canvas id="areaChart"></canvas></div></article>
+      <article class="card chart-card" id="pbt"><h2>Taburan Kawasan Mengikut PBT</h2><div class="canvas-wrap"><canvas id="pbtChart"></canvas></div></article>
+      <article class="card info-card" id="mip"><h2>Ringkasan MIP</h2><div class="mip-layout"><div class="canvas-wrap small-donut"><canvas id="mipChart"></canvas></div><div id="mipStats" class="mip-stats"></div></div></article>
+    </section>
 
-        <article class="card chart-card span-4">
-          <h2>Kategori Kawasan Perindustrian</h2>
-          <div class="chart-wrap donut"><canvas id="categoryChart"></canvas></div>
-        </article>
+    <section class="card table-card" id="profil">
+      <div class="card-title-row"><h2>Senarai Kawasan Perindustrian</h2><input id="searchBox" type="search" placeholder="Cari nama / lokasi / alamat..." /></div>
+      <div class="table-wrap"><table><thead><tr><th>Nama</th><th>Daerah</th><th>PBT</th><th>Kategori</th><th>MIP</th><th>Keluasan (ha)</th></tr></thead><tbody id="tableBody"></tbody></table></div>
+    </section>
 
-        <article class="card map-card span-7 row-2">
-          <div class="map-title-row"><h2>Taburan Kawasan Perindustrian Negeri Selangor</h2><span id="mapCount">177 kawasan</span></div>
-          <div id="map"></div>
-        </article>
-
-        <article class="card chart-card span-5">
-          <h2>Keluasan Kawasan Perindustrian Mengikut Daerah</h2>
-          <div class="chart-wrap"><canvas id="areaChart"></canvas></div>
-        </article>
-
-        <article class="card chart-card span-4">
-          <h2>Top PBT Mengikut Bilangan Kawasan</h2>
-          <div class="chart-wrap"><canvas id="pbtChart"></canvas></div>
-        </article>
-
-        <article class="card chart-card span-4">
-          <h2>Status Managed Industrial Park (MIP)</h2>
-          <div class="chart-wrap donut small"><canvas id="mipChart"></canvas></div>
-        </article>
-
-        <article class="card table-card span-8">
-          <div class="table-head">
-            <h2>Senarai Kawasan Perindustrian</h2>
-            <input id="searchBox" type="search" placeholder="Cari nama / lokasi / alamat..." />
-          </div>
-          <div class="table-scroll">
-            <table>
-              <thead><tr><th>Nama</th><th>Daerah</th><th>PBT</th><th>Kategori</th><th>MIP</th><th>Keluasan (ha)</th></tr></thead>
-              <tbody id="dataTableBody"></tbody>
-            </table>
-          </div>
-        </article>
-      </section>
-
-      <footer>
-        <span><strong>Sumber Data:</strong> Perindustrian_Negeri_Selangor.shp</span>
-        <span>Dashboard Web Interaktif • Data sebenar pengguna</span>
-      </footer>
-    </main>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="app.js"></script>
+    <footer id="data"><span>Sumber Data: Perindustrian_Negeri_Selangor.shp</span><a href="data/perindustrian.geojson" download>Muat turun GeoJSON</a><span>Dashboard v2.0</span></footer>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="app.js"></script>
 </body>
 </html>

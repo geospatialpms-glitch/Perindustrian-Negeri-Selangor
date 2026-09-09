@@ -1,88 +1,26 @@
-const COLORS = ['#d71920','#f04a23','#f58220','#f9a61a','#fbc02d','#7e57c2','#29b6f6','#8d9398','#43a047','#5c6bc0'];
-let allFeatures = [], filteredFeatures = [], geoLayer;
-let districtChart, categoryChart, areaChart, pbtChart, mipChart;
+const COLORS=['#cf1f2b','#f15a24','#f7931d','#f9b51b','#ffd23f','#8b5cf6','#2980b9','#7f8c8d','#2a9d8f','#a855f7'];
+let allFeatures=[], filteredFeatures=[], geoLayer;
+let charts={};
+const map=L.map('map',{zoomControl:true}).setView([3.2,101.45],9);
+const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
+const satellite=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri'});
+L.control.layers({'Peta':osm,'Satelit':satellite},null,{position:'topleft'}).addTo(map);
+L.control.scale({imperial:false}).addTo(map);
 
-const map = L.map('map', { zoomControl: true }).setView([3.25,101.45], 9);
-const street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'});
-const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom: 19, attribution: 'Tiles &copy; Esri'});
-street.addTo(map);
-L.control.layers({'Peta': street, 'Satelit': satellite}, null, {position:'topleft'}).addTo(map);
-
-const categoryColor = {};
-function colorForCategory(cat){
-  if(!categoryColor[cat]) categoryColor[cat] = COLORS[Object.keys(categoryColor).length % COLORS.length];
-  return categoryColor[cat];
-}
-
-fetch('data/perindustrian_selangor.geojson')
-  .then(r => r.json())
-  .then(data => {
-    allFeatures = data.features;
-    populateFilters();
-    createCharts();
-    applyFilters();
-    addLegend();
-  })
-  .catch(err => {
-    console.error(err);
-    alert('Data GeoJSON tidak dapat dimuatkan. Jalankan dashboard melalui web server / GitHub Pages, bukan terus file://.');
-  });
-
-function unique(field){return [...new Set(allFeatures.map(f=>f.properties[field]).filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b)))}
-function fillSelect(id, values){const el=document.getElementById(id); values.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;el.appendChild(o);});}
-function populateFilters(){fillSelect('filterDaerah',unique('DAERAH'));fillSelect('filterPBT',unique('PBT'));fillSelect('filterKategori',unique('KATEGORI'));}
-
-['filterDaerah','filterPBT','filterKategori','filterMIP'].forEach(id=>document.getElementById(id).addEventListener('change',applyFilters));
-document.getElementById('searchBox').addEventListener('input',renderTable);
-document.getElementById('resetBtn').addEventListener('click',()=>{['filterDaerah','filterPBT','filterKategori','filterMIP'].forEach(id=>document.getElementById(id).value='');document.getElementById('searchBox').value='';applyFilters();});
-
-document.querySelectorAll('.menu-item').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.menu-item').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}));
-
-function applyFilters(){
-  const d=document.getElementById('filterDaerah').value,p=document.getElementById('filterPBT').value,c=document.getElementById('filterKategori').value,m=document.getElementById('filterMIP').value;
-  filteredFeatures=allFeatures.filter(f=>(!d||f.properties.DAERAH===d)&&(!p||f.properties.PBT===p)&&(!c||f.properties.KATEGORI===c)&&(!m||f.properties.MIP===m));
-  updateKPIs(); updateMap(); updateCharts(); renderTable();
-}
-function updateKPIs(){
-  document.getElementById('kpiTotal').textContent=filteredFeatures.length.toLocaleString('ms-MY');
-  document.getElementById('kpiPbt').textContent=new Set(filteredFeatures.map(f=>f.properties.PBT).filter(Boolean)).size;
-  document.getElementById('kpiKategori').textContent=new Set(filteredFeatures.map(f=>f.properties.KATEGORI).filter(Boolean)).size;
-  document.getElementById('kpiMip').textContent=filteredFeatures.filter(f=>f.properties.MIP==='Yes').length;
-  document.getElementById('mapCount').textContent=`${filteredFeatures.length} kawasan`;
-}
-function updateMap(){
-  if(geoLayer) map.removeLayer(geoLayer);
-  geoLayer=L.geoJSON({type:'FeatureCollection',features:filteredFeatures},{
-    style:f=>({color:'#ffffff',weight:.8,fillColor:colorForCategory(f.properties.KATEGORI||'Lain-lain'),fillOpacity:.78}),
-    onEachFeature:(f,l)=>{const p=f.properties;l.bindPopup(`<div class="popup-title">${p.NAMA||'Kawasan Perindustrian'}</div><b>Daerah:</b> ${p.DAERAH||'-'}<br><b>PBT:</b> ${p.PBT||'-'}<br><b>Kategori:</b> ${p.KATEGORI||'-'}<br><b>MIP:</b> ${p.MIP==='Yes'?'Ya':'Tidak'}<br><b>Keluasan:</b> ${Number(p.AREA_HA||0).toLocaleString('ms-MY',{maximumFractionDigits:2})} ha<br><b>Alamat:</b> ${p.ALAMAT||'-'}`);}
-  }).addTo(map);
-  if(filteredFeatures.length){const b=geoLayer.getBounds();if(b.isValid())map.fitBounds(b,{padding:[18,18],maxZoom:12});}
-}
-function aggregate(field, metric='count'){
-  const out={};filteredFeatures.forEach(f=>{const k=f.properties[field]||'Tiada Maklumat';if(metric==='area')out[k]=(out[k]||0)+Number(f.properties.AREA_HA||0);else out[k]=(out[k]||0)+1;});return out;
-}
-function sortedEntries(obj,desc=true){return Object.entries(obj).sort((a,b)=>desc?b[1]-a[1]:a[1]-b[1]);}
-function createCharts(){
-  Chart.defaults.font.family='Inter'; Chart.defaults.color='#475569';
-  districtChart=new Chart(document.getElementById('districtChart'),{type:'bar',data:{labels:[],datasets:[{data:[],backgroundColor:COLORS,borderRadius:3}]},options:barHorizontalOptions()});
-  categoryChart=new Chart(document.getElementById('categoryChart'),{type:'doughnut',data:{labels:[],datasets:[{data:[],backgroundColor:COLORS,borderWidth:1,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:10}}}}}});
-  areaChart=new Chart(document.getElementById('areaChart'),{type:'bar',data:{labels:[],datasets:[{data:[],backgroundColor:COLORS,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'Hektar'},grid:{color:'#edf1f5'}},x:{grid:{display:false},ticks:{font:{size:9}}}}}});
-  pbtChart=new Chart(document.getElementById('pbtChart'),{type:'bar',data:{labels:[],datasets:[{data:[],backgroundColor:COLORS,borderRadius:3}]},options:barHorizontalOptions()});
-  mipChart=new Chart(document.getElementById('mipChart'),{type:'doughnut',data:{labels:['MIP','Bukan MIP'],datasets:[{data:[0,0],backgroundColor:['#d71920','#f7b733'],borderColor:'#fff',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:10}}}}}});
-}
-function barHorizontalOptions(){return{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'#edf1f5'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}}
-function updateCharts(){
-  let e=sortedEntries(aggregate('DAERAH')); districtChart.data.labels=e.map(x=>x[0]);districtChart.data.datasets[0].data=e.map(x=>x[1]);districtChart.update();
-  e=sortedEntries(aggregate('KATEGORI')); categoryChart.data.labels=e.map(x=>x[0]);categoryChart.data.datasets[0].data=e.map(x=>x[1]);categoryChart.data.datasets[0].backgroundColor=e.map(x=>colorForCategory(x[0]));categoryChart.update();
-  e=sortedEntries(aggregate('DAERAH','area'));areaChart.data.labels=e.map(x=>x[0]);areaChart.data.datasets[0].data=e.map(x=>Number(x[1].toFixed(2)));areaChart.update();
-  e=sortedEntries(aggregate('PBT')).slice(0,8);pbtChart.data.labels=e.map(x=>x[0]);pbtChart.data.datasets[0].data=e.map(x=>x[1]);pbtChart.update();
-  const yes=filteredFeatures.filter(f=>f.properties.MIP==='Yes').length,no=filteredFeatures.filter(f=>f.properties.MIP!=='Yes').length;mipChart.data.datasets[0].data=[yes,no];mipChart.update();
-}
-function renderTable(){
-  const q=(document.getElementById('searchBox').value||'').toLowerCase();
-  const rows=filteredFeatures.filter(f=>{const p=f.properties;return !q||[p.NAMA,p.LOKASI,p.ALAMAT,p.DAERAH,p.PBT,p.KATEGORI].some(v=>String(v||'').toLowerCase().includes(q));}).slice(0,300);
-  document.getElementById('dataTableBody').innerHTML=rows.map(f=>{const p=f.properties;return `<tr><td><b>${p.NAMA||'-'}</b></td><td>${p.DAERAH||'-'}</td><td>${p.PBT||'-'}</td><td>${p.KATEGORI||'-'}</td><td><span class="badge ${p.MIP==='Yes'?'yes':'no'}">${p.MIP==='Yes'?'Ya':'Tidak'}</span></td><td>${Number(p.AREA_HA||0).toLocaleString('ms-MY',{maximumFractionDigits:2})}</td></tr>`}).join('');
-}
-function addLegend(){
-  const legend=L.control({position:'topright'});legend.onAdd=()=>{const div=L.DomUtil.create('div','legend');div.innerHTML='<b>Kategori Kawasan</b><br>'+unique('KATEGORI').map(c=>`<i style="background:${colorForCategory(c)}"></i>${c}`).join('<br>');return div;};legend.addTo(map);
-}
+const $=id=>document.getElementById(id);
+const fmt=n=>new Intl.NumberFormat('ms-MY',{maximumFractionDigits:2}).format(n);
+const unique=(arr)=>[...new Set(arr.filter(v=>v!==null&&v!==undefined&&v!==''))].sort((a,b)=>String(a).localeCompare(String(b)));
+function colorForCategory(cat){const cats=unique(allFeatures.map(f=>f.properties.KATEGORI));return COLORS[Math.max(0,cats.indexOf(cat))%COLORS.length];}
+function populateSelect(id,values){const el=$(id); values.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;el.appendChild(o)});}
+function groupCount(features,key){const m={};features.forEach(f=>{const v=f.properties[key]??'Tiada Maklumat';m[v]=(m[v]||0)+1});return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
+function groupSum(features,key,sumKey){const m={};features.forEach(f=>{const v=f.properties[key]??'Tiada Maklumat';m[v]=(m[v]||0)+Number(f.properties[sumKey]||0)});return Object.entries(m).sort((a,b)=>b[1]-a[1]);}
+function chartBase(){return {responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:12,font:{size:10}}}},scales:{x:{grid:{color:'#edf1f4'},ticks:{font:{size:9}}},y:{grid:{display:false},ticks:{font:{size:9}}}}};}
+function renderBar(id,entries,horizontal=true){if(charts[id]) charts[id].destroy();const labels=entries.map(x=>x[0]);const vals=entries.map(x=>x[1]);const options=chartBase();if(horizontal){options.indexAxis='y';}charts[id]=new Chart($(id),{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:labels.map((_,i)=>COLORS[i%5]),borderRadius:2}]},options:{...options,plugins:{...options.plugins,legend:{display:false}}}});}
+function renderDonut(id,entries){if(charts[id]) charts[id].destroy();charts[id]=new Chart($(id),{type:'doughnut',data:{labels:entries.map(x=>x[0]),datasets:[{data:entries.map(x=>x[1]),backgroundColor:entries.map((_,i)=>COLORS[i%COLORS.length]),borderColor:'#fff',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right',labels:{boxWidth:10,font:{size:9}}}}}});}
+function updateMap(features){if(geoLayer) map.removeLayer(geoLayer);geoLayer=L.geoJSON({type:'FeatureCollection',features},{style:f=>({color:'#fff',weight:.7,fillColor:colorForCategory(f.properties.KATEGORI),fillOpacity:.78}),onEachFeature:(f,l)=>{const p=f.properties;l.bindPopup(`<div class="popup-title">${p.NAMA||'-'}</div><div class="popup-row"><b>Daerah:</b> ${p.DAERAH||'-'}</div><div class="popup-row"><b>PBT:</b> ${p.PBT||'-'}</div><div class="popup-row"><b>Kategori:</b> ${p.KATEGORI||'-'}</div><div class="popup-row"><b>MIP:</b> ${p.MIP==='Yes'?'Ya':p.MIP==='No'?'Tidak':'Tiada Maklumat'}</div><div class="popup-row"><b>Keluasan:</b> ${fmt(p.KELUASAN_HA)} ha</div><div class="popup-row"><b>Alamat:</b> ${p.ALAMAT||'-'}</div>`);}}).addTo(map);$('mapCount').textContent=`${features.length} kawasan`;if(features.length){try{map.fitBounds(geoLayer.getBounds(),{padding:[12,12],maxZoom:12});}catch(e){}}}
+function updateKPIs(features){$('kpiKawasan').textContent=features.length;$('kpiPBT').textContent=unique(features.map(f=>f.properties.PBT)).length;$('kpiKategori').textContent=unique(features.map(f=>f.properties.KATEGORI)).length;$('kpiMIP').textContent=features.filter(f=>f.properties.MIP==='Yes').length;}
+function renderCharts(features){renderBar('districtChart',groupCount(features,'DAERAH'),true);renderDonut('categoryChart',groupCount(features,'KATEGORI'));renderBar('areaChart',groupSum(features,'DAERAH','KELUASAN_HA'),false);renderBar('pbtChart',groupCount(features,'PBT'),true);const mip=[['MIP',features.filter(f=>f.properties.MIP==='Yes').length],['Bukan MIP',features.filter(f=>f.properties.MIP==='No').length],['Tiada Maklumat',features.filter(f=>!f.properties.MIP).length]];renderDonut('mipChart',mip);$('mipStats').innerHTML=mip.map(x=>`<div class="mip-stat"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')+`<div class="mip-stat"><span>Jumlah ditapis</span><b>${features.length}</b></div>`;}
+function renderTable(features){const q=$('searchBox').value.trim().toLowerCase();const rows=features.filter(f=>{const p=f.properties;return !q||[p.NAMA,p.LOKASI,p.ALAMAT,p.DAERAH,p.PBT,p.KATEGORI].some(v=>String(v||'').toLowerCase().includes(q));}).slice(0,300);$('tableBody').innerHTML=rows.map(f=>{const p=f.properties;return `<tr><td>${p.NAMA||'-'}</td><td>${p.DAERAH||'-'}</td><td>${p.PBT||'-'}</td><td>${p.KATEGORI||'-'}</td><td>${p.MIP==='Yes'?'Ya':p.MIP==='No'?'Tidak':'-'}</td><td>${fmt(p.KELUASAN_HA)}</td></tr>`}).join('');}
+function applyFilters(){const d=$('filterDaerah').value,p=$('filterPBT').value,k=$('filterKategori').value,m=$('filterMIP').value;filteredFeatures=allFeatures.filter(f=>{const x=f.properties;return (!d||x.DAERAH===d)&&(!p||x.PBT===p)&&(!k||x.KATEGORI===k)&&(!m||(m==='__NULL__'?!x.MIP:x.MIP===m));});updateKPIs(filteredFeatures);renderCharts(filteredFeatures);updateMap(filteredFeatures);renderTable(filteredFeatures);}
+async function init(){const data=await fetch('data/perindustrian.geojson').then(r=>r.json());allFeatures=data.features;populateSelect('filterDaerah',unique(allFeatures.map(f=>f.properties.DAERAH)));populateSelect('filterPBT',unique(allFeatures.map(f=>f.properties.PBT)));populateSelect('filterKategori',unique(allFeatures.map(f=>f.properties.KATEGORI)));['filterDaerah','filterPBT','filterKategori','filterMIP'].forEach(id=>$(id).addEventListener('change',applyFilters));$('resetBtn').addEventListener('click',()=>{['filterDaerah','filterPBT','filterKategori','filterMIP'].forEach(id=>$(id).value='');$('searchBox').value='';applyFilters();});$('searchBox').addEventListener('input',()=>renderTable(filteredFeatures));applyFilters();}
+init().catch(err=>{console.error(err);document.body.insertAdjacentHTML('beforeend','<div style="position:fixed;bottom:10px;right:10px;background:#fff3cd;border:1px solid #ffe69c;padding:10px;z-index:9999">Data gagal dimuatkan. Jalankan dashboard melalui web server / GitHub Pages.</div>');});
