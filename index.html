@@ -12,7 +12,7 @@ const $=x=>document.getElementById(x), palette=['#b51632','#ed7024','#f5bc35','#
 map.createPane('districtBoundary');map.getPane('districtBoundary').style.zIndex=460;map.getPane('districtBoundary').style.pointerEvents='none';
 map.createPane('pbtBoundary');map.getPane('pbtBoundary').style.zIndex=465;map.getPane('pbtBoundary').style.pointerEvents='none';
 let districtBoundary=null,pbtBoundary=null;
-const boundaryPanel=L.control({position:'topright'});
+const boundaryPanel=L.control({position:'topleft'});
 boundaryPanel.onAdd=function(){const div=L.DomUtil.create('div','boundary-control');div.innerHTML='<strong>Lapisan Peta</strong><label><input type="checkbox" id="showIndustri" checked><span class="boundary-key industri"></span>Kawasan Industri</label><label><input type="checkbox" id="showDaerah" checked><span class="boundary-key"></span>Sempadan Daerah</label><label><input type="checkbox" id="showPBT" checked><span class="boundary-key pbt"></span>Sempadan PBT</label><small>Tandakan untuk papar / sembunyi</small>';L.DomEvent.disableClickPropagation(div);L.DomEvent.disableScrollPropagation(div);return div};boundaryPanel.addTo(map);
 $('showIndustri').addEventListener('change',()=>{if(layer){if($('showIndustri').checked)layer.addTo(map);else map.removeLayer(layer)}});
 $('showDaerah').addEventListener('change',()=>{if(districtBoundary){if($('showDaerah').checked)districtBoundary.addTo(map);else map.removeLayer(districtBoundary)}});
